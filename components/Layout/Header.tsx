@@ -3,21 +3,16 @@ import { useRouter } from "next/router";
 import { PlusCircle } from "lucide-react";
 
 interface HeaderProps {
-  userName?: string;
-  todaySummary?: string;
   onNovaTransacaoClick?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({
-  userName = "Newton",
-  todaySummary = "Você ainda não cadastrou gastos hoje.",
-  onNovaTransacaoClick,
-}) => {
+const Header: React.FC<HeaderProps> = ({ onNovaTransacaoClick }) => {
   const router = useRouter();
+
   const today = new Date().toLocaleDateString("pt-BR", {
     weekday: "long",
     day: "2-digit",
-    month: "short",
+    month: "long",
   });
 
   const handleNovaTransacao = () => {
@@ -25,24 +20,32 @@ const Header: React.FC<HeaderProps> = ({
       onNovaTransacaoClick();
       return;
     }
-    // fallback: levar para página de transações
     router.push("/transacoes");
   };
 
   return (
-    <header className="h-16 flex items-center justify-between px-4 md:px-6 border-b border-border-subtle bg-background-elevated/70 backdrop-blur-sm sticky top-0 z-20">
-      <div>
-        <p className="text-xs uppercase tracking-wide text-text-muted">
+    <header className="
+      h-16 
+      flex items-center justify-between 
+      px-4 md:px-6 
+      border-b border-border-subtle 
+      bg-background-elevated/70 
+      backdrop-blur-sm 
+      sticky top-0 z-20
+    ">
+      
+      {/* Informações institucionais */}
+      <div className="flex flex-col">
+        <span className="text-[11px] uppercase tracking-wide text-text-muted">
           {today}
-        </p>
-        <h1 className="text-lg md:text-xl font-semibold">
-          Olá, <span className="text-brand">{userName}</span> 👋
+        </span>
+
+        <h1 className="text-lg md:text-xl font-semibold leading-tight">
+          Painel Administrativo
         </h1>
-        <p className="hidden md:block text-xs text-text-muted mt-0.5">
-          {todaySummary}
-        </p>
       </div>
 
+      {/* Ações */}
       <div className="flex items-center gap-2">
         <button
           type="button"
