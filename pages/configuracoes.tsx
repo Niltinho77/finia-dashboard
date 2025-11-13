@@ -12,8 +12,8 @@ export default function ConfiguracoesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Redirect se não estiver logado
   useEffect(() => {
-    // se nem token tem, manda pro login
     if (!isAuthenticated()) {
       router.replace("/login");
       return;
@@ -25,12 +25,15 @@ export default function ConfiguracoesPage() {
       try {
         setLoading(true);
         setError(null);
+
         const data = await fetchCurrentUser();
         if (!isMounted) return;
+
         setUser(data);
       } catch (err) {
         const apiError = err as ApiError;
         if (!isMounted) return;
+
         setError(
           apiError.message ??
             "Não foi possível carregar seus dados. Faça login novamente."
@@ -52,29 +55,30 @@ export default function ConfiguracoesPage() {
     router.push("/login");
   };
 
+  // Label do plano
   const planLabel =
-    user?.plan === "TRIAL"
-      ? "Plano de testes (TRIAL)"
-      : user?.plan === "PREMIUM"
+    user?.plano === "TRIAL"
+      ? "Plano de Testes (TRIAL)"
+      : user?.plano === "PREMIUM"
       ? "Plano Premium"
       : "Plano indefinido";
 
+  // Descrição do plano
   const planDescription =
-    user?.plan === "TRIAL"
+    user?.plano === "TRIAL"
       ? "Você está usando a versão de testes do FinIA. O uso é limitado em quantidade de operações."
       : "Você está no plano Premium, com acesso completo aos recursos do FinIA.";
 
   return (
     <div className="space-y-4 md:space-y-6">
       <header>
-        <h1 className="text-xl md:text-2xl font-semibold">
-          Configurações
-        </h1>
+        <h1 className="text-xl md:text-2xl font-semibold">Configurações</h1>
         <p className="text-sm text-text-muted mt-1">
           Gerencie seu perfil, plano e sessão do FinIA.
         </p>
       </header>
 
+      {/* Skeleton enquanto carrega */}
       {loading && (
         <div className="space-y-3">
           <div className="h-20 bg-background-elevated rounded-2xl animate-pulse" />
@@ -83,32 +87,38 @@ export default function ConfiguracoesPage() {
         </div>
       )}
 
+      {/* Erro */}
       {error && !loading && (
         <div className="rounded-xl border border-status-danger/30 bg-status-danger/5 px-4 py-3 text-sm text-status-danger">
           {error}
         </div>
       )}
 
+      {/* Conteúdo principal */}
       {!loading && !error && user && (
         <>
           {/* Perfil */}
           <section className="bg-background-elevated rounded-2xl shadow-soft p-5 md:p-6">
             <h2 className="text-sm font-semibold mb-3">Perfil</h2>
+
             <div className="space-y-1 text-sm">
               <p>
                 <span className="text-text-muted">Nome: </span>
-                <span className="font-medium">{user.name}</span>
+                <span className="font-medium">
+                  {user.nome ?? "Não informado"}
+                </span>
               </p>
-              {user.phone && (
+
+              {user.telefone && (
                 <p>
                   <span className="text-text-muted">Telefone: </span>
-                  <span className="font-medium">{user.phone}</span>
+                  <span className="font-medium">{user.telefone}</span>
                 </p>
               )}
-              {user.createdAt && (
+
+              {user.criadoEm && (
                 <p className="text-xs text-text-muted mt-1">
-                  Conta criada em{" "}
-                  {formatDate(user.createdAt)}
+                  Conta criada em {formatDate(user.criadoEm)}
                 </p>
               )}
             </div>
@@ -117,34 +127,37 @@ export default function ConfiguracoesPage() {
           {/* Plano */}
           <section className="bg-background-elevated rounded-2xl shadow-soft p-5 md:p-6">
             <h2 className="text-sm font-semibold mb-3">Plano</h2>
-            <p className="text-sm font-medium">{planLabel}</p>
-            <p className="text-xs text-text-muted mt-1">
-              {planDescription}
-            </p>
 
-            {user.plan === "TRIAL" && user.planExpiresAt && (
+            <p className="text-sm font-medium">{planLabel}</p>
+
+            <p className="text-xs text-text-muted mt-1">{planDescription}</p>
+
+            {user.plano === "TRIAL" && user.trialExpiraEm && (
               <p className="text-xs text-text-muted mt-1">
-                Seu período de testes está previsto para encerrar em{" "}
-                {formatDate(user.planExpiresAt)}.
+                Seu período de testes encerra em {formatDate(user.trialExpiraEm)}.
               </p>
             )}
 
             <div className="mt-4 flex flex-wrap gap-2 text-xs">
-              {user.plan === "TRIAL" && (
+              {user.plano === "TRIAL" && (
                 <button
                   type="button"
                   className="btn-primary"
-                  // futuro: abrir checkout / upgrade
-                  onClick={() => alert("Fluxo de upgrade ainda não conectado.")}
+                  onClick={() =>
+                    alert("Fluxo de upgrade Premium será ativado em breve.")
+                  }
                 >
                   Fazer upgrade para Premium
                 </button>
               )}
-              {user.plan === "PREMIUM" && (
+
+              {user.plano === "PREMIUM" && (
                 <button
                   type="button"
                   className="btn-ghost"
-                  onClick={() => alert("Gestão de assinatura ainda não configurada.")}
+                  onClick={() =>
+                    alert("Gestão da assinatura será disponibilizada em breve.")
+                  }
                 >
                   Gerenciar assinatura
                 </button>
@@ -152,7 +165,7 @@ export default function ConfiguracoesPage() {
             </div>
           </section>
 
-          {/* Sessão / Logout */}
+          {/* Sessão */}
           <section className="bg-background-elevated rounded-2xl shadow-soft p-5 md:p-6 flex items-center justify-between gap-3">
             <div className="text-sm">
               <p className="font-semibold">Sessão</p>
@@ -160,6 +173,7 @@ export default function ConfiguracoesPage() {
                 Se estiver em um dispositivo compartilhado, lembre-se de sair da conta.
               </p>
             </div>
+
             <button
               type="button"
               onClick={handleLogout}
@@ -169,12 +183,11 @@ export default function ConfiguracoesPage() {
             </button>
           </section>
 
-          {/* Tema - placeholder */}
+          {/* Tema */}
           <section className="bg-background-elevated rounded-2xl shadow-soft p-5 md:p-6">
             <h2 className="text-sm font-semibold mb-2">Tema</h2>
             <p className="text-xs text-text-muted">
-              No momento o FinIA utiliza apenas o tema claro. No futuro você poderá
-              alternar para tema escuro diretamente aqui.
+              No momento o FinIA utiliza apenas o tema claro. Tema escuro será adicionado futuramente.
             </p>
           </section>
         </>

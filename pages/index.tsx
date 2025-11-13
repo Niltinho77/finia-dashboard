@@ -129,7 +129,7 @@ export default function HomePage() {
   };
 }, [transactions, today]);
 
-  const shortName = formatShortName(user?.name);
+  const shortName = formatShortName(user?.nome);
   const headerSummary =
     todayTransactions > 0
       ? `Hoje você registrou ${todayTransactions} ${
@@ -154,13 +154,13 @@ export default function HomePage() {
             <span className="uppercase tracking-wide">
               Plano{" "}
               <span className="font-semibold text-brand">
-                {user.plan}
+                {user.plano}
               </span>
             </span>
-            {user.plan === "TRIAL" && user.planExpiresAt && (
+            {user.plano === "TRIAL" && user.trialExpiraEm && (
               <p className="mt-0.5">
                 Seu período de testes termina em{" "}
-                {new Date(user.planExpiresAt).toLocaleDateString(
+                {new Date(user.trialExpiraEm).toLocaleDateString(
                   "pt-BR"
                 )}
                 .
