@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  @apply bg-background-base text-text-base font-sans;
+}
+
+/* Scrollbar discreta */
+
+* {
+  box-sizing: border-box;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.6);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.9);
+}
+
+/* Layout containers */
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  background: radial-gradient(circle at top left, #E5F6EE 0, #F6FBF8 40%, #F6FBF8 100%);
+}
+
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  max-width: 100%;
+}
+
+.app-content {
+  flex: 1;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Tipografia */
+
+h1,
+h2,
+h3,
+h4 {
+  @apply font-semibold text-text-base;
+}
+
+/* Botões genéricos */
+
+.btn-primary {
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-full bg-brand text-white text-sm font-medium shadow-soft hover:opacity-90 transition;
+}
+
+.btn-ghost {
+  @apply inline-flex items-center justify-center px-3 py-2 rounded-full text-text-muted hover:bg-background-subtle text-sm transition;
+}

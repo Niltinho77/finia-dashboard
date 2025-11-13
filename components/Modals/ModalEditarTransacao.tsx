@@ -1,0 +1,215 @@
+// components/Modals/ModalEditarTransacao.tsx
+import { useEffect, useState } from "react";
+import {
+  Transaction,
+  TransactionType,
+  updateTransaction,
+  ApiError,
+} from "@/lib/api";
+
+interface ModalEditarTransacaoProps {
+  open: boolean;
+  transaction: Transaction | null;
+  onClose: () => void;
+  onUpdated?: () => void;
+}
+
+const toDateTimeLocal = (isoDate: string) => {
+  const d = new Date(isoDate);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  const mm = pad(d.getMonth() + 1);
+  const dd = pad(d.getDate());
+  const hh = pad(d.getHours());
+  const min = pad(d.getMinutes());
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+};
+
+const ModalEditarTransacao: React.FC<ModalEditarTransacaoProps> = ({
+  open,
+  transaction,
+  onClose,
+  onUpdated,
+}) => {
+  const [description, setDescription] = useState("");
+  const [amountStr, setAmountStr] = useState("");
+  const [type, setType] = useState<TransactionType>("EXPENSE");
+  const [category, setCategory] = useState("");
+  const [dateTime, setDateTime] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (transaction && open) {
+      setDescription(transaction.description);
+      setAmountStr(String(transaction.amount).replace(".", ","));
+      setType(transaction.type);
+      setCategory(transaction.category || "");
+      setDateTime(toDateTimeLocal(transaction.date));
+      setError(null);
+    }
+  }, [transaction, open]);
+
+  if (!open || !transaction) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    const raw = amountStr.replace(".", "").replace(",", ".");
+    const amount = Number(raw);
+
+    if (!description.trim()) {
+      setError("Descrição é obrigatória.");
+      return;
+    }
+
+    if (!amount || Number.isNaN(amount)) {
+      setError("Informe um valor válido.");
+      return;
+    }
+
+    if (!category.trim()) {
+      setError("Categoria é obrigatória.");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const isoDate = new Date(dateTime).toISOString();
+
+      await updateTransaction({
+        id: transaction.id,
+        description: description.trim(),
+        amount,
+        type,
+        category: category.trim(),
+        date: isoDate,
+      });
+
+      if (onUpdated) onUpdated();
+      onClose();
+    } catch (err) {
+      const apiError = err as ApiError;
+      setError(apiError.message ?? "Erro ao atualizar transação.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleClose = () => {
+    if (submitting) return;
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
+      <div className="bg-background-elevated rounded-2xl shadow-medium w-full max-w-md mx-4 p-5 md:p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold">Editar transação</h2>
+          <button
+            type="button"
+            onClick={handleClose}
+            className="text-text-muted text-sm hover:text-text-base"
+          >
+            Fechar
+          </button>
+        </div>
+
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-text-muted">
+              Descrição
+            </label>
+            <input
+              type="text"
+              className="w-full rounded-xl border border-border-subtle px-3 py-2 text-sm bg-background-base focus:outline-none focus:ring-1 focus:ring-brand"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-text-muted">
+                Valor (R$)
+              </label>
+              <input
+                type="text"
+                className="w-full rounded-xl border border-border-subtle px-3 py-2 text-sm bg-background-base focus:outline-none focus:ring-1 focus:ring-brand"
+                value={amountStr}
+                onChange={(e) => setAmountStr(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-text-muted">
+                Tipo
+              </label>
+              <select
+                className="w-full rounded-xl border border-border-subtle px-3 py-2 text-sm bg-background-base focus:outline-none focus:ring-1 focus:ring-brand"
+                value={type}
+                onChange={(e) =>
+                  setType(e.target.value as TransactionType)
+                }
+              >
+                <option value="EXPENSE">Saída</option>
+                <option value="INCOME">Entrada</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-text-muted">
+              Categoria
+            </label>
+            <input
+              type="text"
+              className="w-full rounded-xl border border-border-subtle px-3 py-2 text-sm bg-background-base focus:outline-none focus:ring-1 focus:ring-brand"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-text-muted">
+              Data e hora
+            </label>
+            <input
+              type="datetime-local"
+              className="w-full rounded-xl border border-border-subtle px-3 py-2 text-sm bg-background-base focus:outline-none focus:ring-1 focus:ring-brand"
+              value={dateTime}
+              onChange={(e) => setDateTime(e.target.value)}
+            />
+          </div>
+
+          {error && (
+            <div className="text-xs text-status-danger bg-status-danger/5 border border-status-danger/30 rounded-xl px-3 py-2">
+              {error}
+            </div>
+          )}
+
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={handleClose}
+              disabled={submitting}
+              className="btn-ghost"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="btn-primary"
+            >
+              {submitting ? "Salvando..." : "Salvar alterações"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default ModalEditarTransacao;
