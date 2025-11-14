@@ -148,12 +148,16 @@ export async function loginWithPhone(
 }
 
 /**
- * Login via token do link mágico (GET /api/auth/magic-login?token=...)
+ * 🔑 Login via token do link mágico
+ * Faz POST /api/auth/magic-login com { token } no corpo,
+ * como o backend está esperando.
  */
 export async function loginWithMagicToken(
   token: string
 ): Promise<LoginResponse> {
-  return get<LoginResponse>("/auth/magic-login", { token });
+  return post<LoginResponse, { token: string }>("/auth/magic-login", {
+    token,
+  });
 }
 
 /**
