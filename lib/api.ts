@@ -4,7 +4,9 @@ import axios, { AxiosError, AxiosInstance } from "axios";
 /**
  * TIPOS GERAIS
  */
-export type PlanType = "TRIAL" | "PREMIUM";
+
+// Mesmos valores do enum PlanoUsuario do Prisma
+export type PlanType = "TRIAL" | "PREMIUM" | "TESTER" | "BLOQUEADO";
 
 export interface User {
   id: string;
@@ -51,8 +53,13 @@ export interface ApiError {
 /**
  * CONFIGURAÇÃO DO AXIOS
  */
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "https://finja-app-production.up.railway.app/api";
+
+// Garante que não fique com "//" no meio se a env vier com barra no final
+const rawBaseUrl =
+  process.env.NEXT_PUBLIC_API_URL ??
+  "https://finja-app-production.up.railway.app/api";
+
+const API_BASE_URL = rawBaseUrl.replace(/\/+$/, ""); // remove barras no fim
 
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -124,17 +131,29 @@ async function del<T>(url: string): Promise<T> {
 /**
  * ENDPOINTS DE AUTENTICAÇÃO / USUÁRIO
  */
-interface LoginResponse {
+export interface LoginResponse {
   user: User;
   token: string;
 }
 
 /**
- * Efetua login enviando o telefone (conforme o back-end espera).
- * Ajuste o nome do campo se sua rota aceitar um token em vez de telefone.
+ * Login via telefone (fallback / login manual)
  */
-export async function loginWithPhone(telefone: string): Promise<LoginResponse> {
-  return post<LoginResponse, { telefone: string }>("/auth/login", { telefone });
+export async function loginWithPhone(
+  telefone: string
+): Promise<LoginResponse> {
+  return post<LoginResponse, { telefone: string }>("/auth/login", {
+    telefone,
+  });
+}
+
+/**
+ * Login via token do link mágico (GET /api/auth/magic-login?token=...)
+ */
+export async function loginWithMagicToken(
+  token: string
+): Promise<LoginResponse> {
+  return get<LoginResponse>("/auth/magic-login", { token });
 }
 
 /**
@@ -149,7 +168,7 @@ export async function fetchCurrentUser(): Promise<User> {
  */
 export interface TransactionFilters {
   from?: string; // ISO date
-  to?: string;   // ISO date
+  to?: string; // ISO date
   type?: TransactionType;
   category?: string;
 }
@@ -171,10 +190,14 @@ export interface CreateTransactionInput {
 export async function createTransaction(
   payload: CreateTransactionInput
 ): Promise<Transaction> {
-  return post<Transaction, CreateTransactionInput>("/transactions", payload);
+  return post<Transaction, CreateTransactionInput>(
+    "/transactions",
+    payload
+  );
 }
 
-export interface UpdateTransactionInput extends Partial<CreateTransactionInput> {
+export interface UpdateTransactionInput
+  extends Partial<CreateTransactionInput> {
   id: string;
 }
 
@@ -188,7 +211,9 @@ export async function updateTransaction(
   );
 }
 
-export async function deleteTransaction(id: string): Promise<{ success: boolean }> {
+export async function deleteTransaction(
+  id: string
+): Promise<{ success: boolean }> {
   return del<{ success: boolean }>(`/transactions/${id}`);
 }
 
@@ -210,16 +235,22 @@ export async function fetchTasks(): Promise<Task[]> {
   return get<Task[]>("/tasks");
 }
 
-export async function createTask(payload: CreateTaskInput): Promise<Task> {
+export async function createTask(
+  payload: CreateTaskInput
+): Promise<Task> {
   return post<Task, CreateTaskInput>("/tasks", payload);
 }
 
-export async function updateTask(payload: UpdateTaskInput): Promise<Task> {
+export async function updateTask(
+  payload: UpdateTaskInput
+): Promise<Task> {
   const { id, ...data } = payload;
   return put<Task, Partial<UpdateTaskInput>>(`/tasks/${id}`, data);
 }
 
-export async function deleteTask(id: string): Promise<{ success: boolean }> {
+export async function deleteTask(
+  id: string
+): Promise<{ success: boolean }> {
   return del<{ success: boolean }>(`/tasks/${id}`);
 }
 
@@ -243,7 +274,10 @@ export interface IaAnalyzeResponse {
   tipo?: string;
 }
 
-export async function analyzeIaMessage(mensagem: string, telefone?: string) {
+export async function analyzeIaMessage(
+  mensagem: string,
+  telefone?: string
+) {
   return post<IaAnalyzeResponse, { mensagem: string; telefone?: string }>(
     "/ia/analisar",
     { mensagem, telefone }

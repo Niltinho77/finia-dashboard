@@ -1,7 +1,12 @@
 // pages/login.tsx
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { loginWithPhone, ApiError, User } from "@/lib/api";
+import {
+  loginWithPhone,
+  loginWithMagicToken,
+  ApiError,
+  User,
+} from "@/lib/api";
 import {
   isAuthenticated,
   setAuthSession,
@@ -10,9 +15,11 @@ import {
 
 export default function LoginPage() {
   const router = useRouter();
+  const { token } = router.query; // token do link mágico (?token=...)
 
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
+  const [magicTried, setMagicTried] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
@@ -27,6 +34,50 @@ export default function LoginPage() {
   useEffect(() => {
     setCurrentUser(getCurrentUser());
   }, []);
+
+  /**
+   * Tenta login automático via link mágico (?token=...)
+   */
+  useEffect(() => {
+    // só roda no client quando o router estiver pronto
+    if (!router.isReady) return;
+
+    // se já tentamos uma vez, não tenta de novo
+    if (magicTried) return;
+
+    // token precisa ser string
+    if (typeof token !== "string" || !token.trim()) {
+      return;
+    }
+
+    async function doMagicLogin(tokenStr: string) {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const { user, token: jwt } = await loginWithMagicToken(tokenStr);
+
+        // salva sessão
+        setAuthSession(user, jwt);
+
+        // redireciona para o dashboard
+        router.replace("/");
+      } catch (err) {
+        const apiError = err as ApiError;
+        setError(
+          apiError.message ??
+            "Não foi possível entrar com o link mágico. Você pode tentar entrar informando seu telefone abaixo."
+        );
+        setMagicTried(true); // marca que já tentamos login mágico
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // tenta login mágico apenas uma vez
+    setMagicTried(true);
+    doMagicLogin(token);
+  }, [router, token, magicTried]);
 
   /**
    * Normaliza o telefone removendo todos os caracteres que não sejam dígitos
@@ -51,7 +102,7 @@ export default function LoginPage() {
       return;
     }
 
-    // Sanitiza/normaliza o telefone antes de enviar para o back‑end
+    // Sanitiza/normaliza o telefone antes de enviar para o back-end
     const normalizedPhone = normalizePhone(phone);
 
     if (!normalizedPhone) {
@@ -80,6 +131,8 @@ export default function LoginPage() {
     }
   };
 
+  const isMagicFlow = typeof token === "string" && token.trim().length > 0;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#F6FBF8] to-[#E3F5EC] flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-soft p-6 md:p-8">
@@ -99,46 +152,62 @@ export default function LoginPage() {
         <h1 className="text-lg md:text-xl font-semibold mb-2">
           Entrar no painel
         </h1>
-        <p className="text-xs text-text-muted mb-4">
-          Informe o telefone cadastrado no FinIA para visualizar seus dados de transações, tarefas e relatórios.
-        </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1">
-            <label
-              htmlFor="phone"
-              className="text-xs font-medium text-text-muted"
-            >
-              Telefone com DDI/DDD
-            </label>
-            <input
-              id="phone"
-              type="tel"
-              autoComplete="tel"
-              className="w-full rounded-2xl border border-border-subtle px-3 py-2.5 text-sm bg-background-base focus:outline-none focus:ring-2 focus:ring-brand/60"
-              placeholder="Ex.: +55 51 99999-9999"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-            />
-            <p className="text-[11px] text-text-muted mt-1">
-              Você pode usar espaços, parênteses ou traços: nós removeremos automaticamente para validar.
-            </p>
+        {isMagicFlow ? (
+          <p className="text-xs text-text-muted mb-4">
+            Validando seu link de acesso seguro...
+          </p>
+        ) : (
+          <p className="text-xs text-text-muted mb-4">
+            Informe o telefone cadastrado no FinIA para visualizar seus dados
+            de transações, tarefas e relatórios.
+          </p>
+        )}
+
+        {/* Mensagem de erro (tanto do link mágico quanto do login por telefone) */}
+        {error && (
+          <div className="text-xs text-status-danger bg-status-danger/5 border border-status-danger/30 rounded-2xl px-3 py-2 mb-3">
+            {error}
           </div>
+        )}
 
-          {error && (
-            <div className="text-xs text-status-danger bg-status-danger/5 border border-status-danger/30 rounded-2xl px-3 py-2">
-              {error}
+        {/* Formulário de telefone:
+            - sempre aparece quando NÃO estamos no fluxo de link mágico
+            - ou quando o link mágico falhou (magicTried true + erro)
+        */}
+        {(!isMagicFlow || (isMagicFlow && error)) && (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1">
+              <label
+                htmlFor="phone"
+                className="text-xs font-medium text-text-muted"
+              >
+                Telefone com DDI/DDD
+              </label>
+              <input
+                id="phone"
+                type="tel"
+                autoComplete="tel"
+                className="w-full rounded-2xl border border-border-subtle px-3 py-2.5 text-sm bg-background-base focus:outline-none focus:ring-2 focus:ring-brand/60"
+                placeholder="Ex.: +55 51 99999-9999"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+              <p className="text-[11px] text-text-muted mt-1">
+                Você pode usar espaços, parênteses ou traços: nós removeremos
+                automaticamente para validar.
+              </p>
             </div>
-          )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full inline-flex items-center justify-center rounded-full bg-brand text-white text-sm font-medium py-2.5 mt-2 shadow-soft hover:opacity-90 transition disabled:opacity-60"
-          >
-            {loading ? "Entrando..." : "Entrar no painel"}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full inline-flex items-center justify-center rounded-full bg-brand text-white text-sm font-medium py-2.5 mt-2 shadow-soft hover:opacity-90 transition disabled:opacity-60"
+            >
+              {loading ? "Entrando..." : "Entrar no painel"}
+            </button>
+          </form>
+        )}
 
         {/* Rodapé / ajuda */}
         <div className="mt-5 text-[11px] text-text-muted">
