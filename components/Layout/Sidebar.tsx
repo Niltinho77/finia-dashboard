@@ -1,3 +1,4 @@
+// components/Layout/Sidebar.tsx
 import Link from "next/link";
 import { useRouter } from "next/router";
 import {
@@ -7,7 +8,6 @@ import {
   BarChart3,
   Settings,
   Sparkles,
-  Menu,
 } from "lucide-react";
 
 type NavItem = {
@@ -17,105 +17,172 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/", icon: <LayoutDashboard className="w-4 h-4" /> },
-  { label: "Transações", href: "/transacoes", icon: <Receipt className="w-4 h-4" /> },
-  { label: "Tarefas", href: "/tarefas", icon: <CheckSquare className="w-4 h-4" /> },
-  { label: "Relatórios", href: "/relatorios", icon: <BarChart3 className="w-4 h-4" /> },
-  { label: "Configurações", href: "/configuracoes", icon: <Settings className="w-4 h-4" /> },
+  {
+    label: "Dashboard",
+    href: "/",
+    icon: <LayoutDashboard className="w-4 h-4" />,
+  },
+  {
+    label: "Transações",
+    href: "/transacoes",
+    icon: <Receipt className="w-4 h-4" />,
+  },
+  {
+    label: "Tarefas",
+    href: "/tarefas",
+    icon: <CheckSquare className="w-4 h-4" />,
+  },
+  {
+    label: "Relatórios",
+    href: "/relatorios",
+    icon: <BarChart3 className="w-4 h-4" />,
+  },
+  {
+    label: "Configurações",
+    href: "/configuracoes",
+    icon: <Settings className="w-4 h-4" />,
+  },
 ];
 
 const Sidebar: React.FC = () => {
   const router = useRouter();
 
-  return (
-    <aside
-      className="
-        hidden md:flex flex-col justify-between 
-        w-[260px]
-        bg-background-elevated shadow-lg
-        border-r border-border-subtle
-        backdrop-blur-md
-        sticky top-0 h-screen
-        z-30
-      "
-    >
-      {/* Topo */}
-      <div>
-        {/* Logo */}
-        <div className="px-5 pt-6 pb-5 border-b border-border-subtle bg-background-elevated/90">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-2xl bg-brand shadow-md flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
+  const isActive = (href: string) =>
+    router.pathname === href ||
+    (href !== "/" && router.pathname.startsWith(href));
 
-            <div>
-              <p className="text-sm font-semibold text-text-base">
-                FinIA • Dashboard
-              </p>
-              <p className="text-[11px] text-text-muted leading-none">
-                Seu copiloto financeiro
-              </p>
+  return (
+    <>
+      {/* DESKTOP / TABLET: Sidebar lateral */}
+      <aside
+        className="
+          hidden md:flex flex-col justify-between
+          bg-background-elevated/95
+          border-r border-border-subtle
+          shadow-lg
+        "
+        style={{ width: "260px" }}
+      >
+        {/* Topo: Logo + Navegação */}
+        <div className="h-full flex flex-col">
+          <div className="px-5 pt-6 pb-4 border-b border-border-subtle bg-background-elevated">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-2xl bg-brand flex items-center justify-center shadow-soft">
+                <Sparkles className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold tracking-tight text-text-base">
+                  FinIA
+                </span>
+                <span className="text-[11px] text-text-muted">
+                  Seu copiloto financeiro
+                </span>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Navegação */}
-        <nav className="mt-3 px-3 py-4 space-y-1">
-          {navItems.map((item) => {
-            const isActive =
-              router.pathname === item.href ||
-              (item.href !== "/" && router.pathname.startsWith(item.href));
+          <nav className="flex-1 px-3 py-4 space-y-1">
+            {navItems.map((item) => {
+              const active = isActive(item.href);
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`
-                  flex items-center gap-3 px-3 py-2.5 
-                  rounded-xl text-sm font-medium transition-all
-                  ${
-                    isActive
-                      ? "bg-brand-muted text-brand shadow-sm"
-                      : "text-text-muted hover:bg-background-subtle"
-                  }
-                `}
-              >
-                <span
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
                   className={`
-                    flex items-center justify-center rounded-lg p-2 
+                    flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors
                     ${
-                      isActive
-                        ? "bg-brand text-white shadow-md"
-                        : "bg-background-elevated text-text-muted"
+                      active
+                        ? "bg-brand-muted text-brand shadow-sm"
+                        : "text-text-muted hover:bg-background-subtle hover:text-text-base"
                     }
                   `}
                 >
-                  {item.icon}
-                </span>
+                  <span
+                    className={`
+                      flex items-center justify-center rounded-lg p-1.5
+                      ${
+                        active
+                          ? "bg-brand text-white shadow-md"
+                          : "bg-background-elevated text-text-muted"
+                      }
+                    `}
+                  >
+                    {item.icon}
+                  </span>
+                  <span className="font-medium">{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
 
-                {item.label}
-              </Link>
+        {/* Rodapé: Info do plano */}
+        <div className="px-4 py-3 border-t border-border-subtle bg-background-elevated">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-col">
+              <span className="text-[11px] text-text-muted uppercase tracking-wide">
+                Plano atual
+              </span>
+              <span className="text-xs font-semibold text-brand">
+                PREMIUM
+              </span>
+            </div>
+            <span className="text-[11px] text-text-muted">v0.1.0</span>
+          </div>
+        </div>
+      </aside>
+
+      {/* MOBILE: Bottom Navigation fixa */}
+      <nav
+        className="
+          md:hidden
+          fixed bottom-0 inset-x-0 z-30
+          border-t border-border-subtle
+          bg-background-elevated/98
+          backdrop-blur-sm
+          shadow-[0_-4px_12px_rgba(15,23,42,0.18)]
+        "
+      >
+        <ul className="flex justify-between items-stretch">
+          {navItems.map((item) => {
+            const active = isActive(item.href);
+
+            return (
+              <li key={item.href} className="flex-1">
+                <Link
+                  href={item.href}
+                  className={`
+                    flex flex-col items-center justify-center py-2 text-[11px] transition-colors
+                    ${
+                      active
+                        ? "text-brand"
+                        : "text-text-muted hover:text-text-base"
+                    }
+                  `}
+                >
+                  <span
+                    className={`
+                      flex items-center justify-center rounded-full p-1.5 mb-0.5
+                      ${
+                        active
+                          ? "bg-brand/15"
+                          : "bg-background-subtle"
+                      }
+                    `}
+                  >
+                    {item.icon}
+                  </span>
+                  <span className="truncate max-w-[72px]">
+                    {item.label}
+                  </span>
+                </Link>
+              </li>
             );
           })}
-        </nav>
-      </div>
-
-      {/* Rodapé da Sidebar */}
-      <div className="px-4 py-3 border-t border-border-subtle bg-background-elevated/90">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[11px] uppercase text-text-muted tracking-wide">
-              Plano atual
-            </p>
-            <p className="text-xs font-semibold text-brand">
-              PREMIUM
-            </p>
-          </div>
-
-          <span className="text-[11px] text-text-muted">v0.1.0</span>
-        </div>
-      </div>
-    </aside>
+        </ul>
+      </nav>
+    </>
   );
 };
 
