@@ -44,9 +44,27 @@ export default function TarefasPage() {
   }, []);
 
   const filteredTasks = useMemo(() => {
-    return tasks.filter((t) => {
+    // 1) Aplica o filtro de status
+    const base = tasks.filter((t) => {
       if (statusFilter === "ALL") return true;
       return t.status === statusFilter;
+    });
+
+    // 2) Ordena: pendentes primeiro, canceladas no meio, concluídas por último
+    const statusOrder: Record<TaskStatus, number> = {
+      PENDING: 0,
+      CANCELLED: 1,
+      DONE: 2,
+    };
+
+    return [...base].sort((a, b) => {
+      const diff = statusOrder[a.status] - statusOrder[b.status];
+      if (diff !== 0) return diff;
+
+      // opcional: se status for igual, pode ordenar por data de criação
+      const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return aDate - bDate;
     });
   }, [tasks, statusFilter]);
 
