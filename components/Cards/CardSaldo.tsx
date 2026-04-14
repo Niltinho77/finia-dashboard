@@ -1,4 +1,6 @@
 // components/Cards/CardSaldo.tsx
+import { useState } from "react";
+import { Eye, EyeOff, TrendingUp, TrendingDown } from "lucide-react";
 import { formatCurrency } from "@/lib/formatters";
 
 interface CardSaldoProps {
@@ -12,56 +14,102 @@ const CardSaldo: React.FC<CardSaldoProps> = ({
   monthIncome,
   monthExpense,
 }) => {
+  const [hidden, setHidden] = useState(false);
   const netMonth = monthIncome - monthExpense;
   const netPositive = netMonth >= 0;
+  const balancePositive = balance >= 0;
+
+  const mask = "R$ •••••";
 
   return (
-    <section className="bg-background-elevated rounded-2xl shadow-soft p-5 md:p-6 flex flex-col justify-between h-full">
-      <header className="flex items-center justify-between mb-4">
+    <section
+      className="rounded-2xl shadow-medium overflow-hidden h-full flex flex-col"
+      style={{
+        background: "linear-gradient(135deg, #3a9c64 0%, #4CAF78 55%, #6fd49a 100%)",
+      }}
+    >
+      {/* Cabeçalho do card */}
+      <div className="px-5 pt-5 pb-3 flex items-center justify-between">
         <div>
-          <p className="text-xs uppercase tracking-wide text-text-muted">
-            Saldo geral
+          <p className="text-[11px] uppercase tracking-widest text-white/70 font-medium">
+            Saldo total
           </p>
-          <h2 className="text-2xl md:text-3xl font-semibold mt-1">
-            {formatCurrency(balance)}
-          </h2>
-        </div>
-        <div className="flex flex-col items-end text-right">
-          <span className="text-[11px] text-text-muted">Mês atual</span>
-          <span
-            className={`text-sm font-medium ${
-              netPositive ? "text-status-success" : "text-status-danger"
-            }`}
-          >
-            {netPositive ? "+" : "−"}
-            {formatCurrency(Math.abs(netMonth))}
-          </span>
-        </div>
-      </header>
-
-      <div className="grid grid-cols-2 gap-3 mt-2">
-        <div className="bg-background-subtle rounded-xl p-3 flex flex-col">
-          <span className="text-[11px] text-text-muted uppercase tracking-wide">
-            Entradas
-          </span>
-          <span className="text-sm md:text-base font-semibold text-status-success mt-1">
-            {formatCurrency(monthIncome)}
-          </span>
+          <div className="flex items-end gap-2 mt-1">
+            <h2 className="text-3xl md:text-4xl font-bold text-white leading-none">
+              {hidden ? mask : formatCurrency(balance)}
+            </h2>
+            <span
+              className={`
+                mb-0.5 text-xs font-semibold px-2 py-0.5 rounded-full
+                ${
+                  balancePositive
+                    ? "bg-white/20 text-white"
+                    : "bg-red-500/30 text-white"
+                }
+              `}
+            >
+              {balancePositive ? "▲" : "▼"} acumulado
+            </span>
+          </div>
         </div>
 
-        <div className="bg-background-subtle rounded-xl p-3 flex flex-col">
-          <span className="text-[11px] text-text-muted uppercase tracking-wide">
-            Saídas
+        <button
+          type="button"
+          onClick={() => setHidden((h) => !h)}
+          className="p-2 rounded-full bg-white/20 hover:bg-white/30 text-white transition"
+          aria-label={hidden ? "Mostrar saldo" : "Ocultar saldo"}
+        >
+          {hidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+        </button>
+      </div>
+
+      {/* Divisor */}
+      <div className="mx-5 border-t border-white/20" />
+
+      {/* Resumo do mês */}
+      <div className="px-5 py-4 grid grid-cols-2 gap-3">
+        {/* Entradas */}
+        <div className="bg-white/15 rounded-2xl p-3 flex flex-col gap-1">
+          <div className="flex items-center gap-1.5">
+            <TrendingUp className="w-3.5 h-3.5 text-white/80" />
+            <span className="text-[11px] text-white/70 uppercase tracking-wide font-medium">
+              Entradas
+            </span>
+          </div>
+          <span className="text-base font-bold text-white">
+            {hidden ? "•••" : formatCurrency(monthIncome)}
           </span>
-          <span className="text-sm md:text-base font-semibold text-status-danger mt-1">
-            {formatCurrency(monthExpense)}
+          <span className="text-[10px] text-white/60">este mês</span>
+        </div>
+
+        {/* Saídas */}
+        <div className="bg-white/15 rounded-2xl p-3 flex flex-col gap-1">
+          <div className="flex items-center gap-1.5">
+            <TrendingDown className="w-3.5 h-3.5 text-white/80" />
+            <span className="text-[11px] text-white/70 uppercase tracking-wide font-medium">
+              Saídas
+            </span>
+          </div>
+          <span className="text-base font-bold text-white">
+            {hidden ? "•••" : formatCurrency(monthExpense)}
           </span>
+          <span className="text-[10px] text-white/60">este mês</span>
         </div>
       </div>
 
-      <p className="mt-3 text-xs text-text-muted">
-        Este painel considera apenas os dados já sincronizados pelo FinIA.
-      </p>
+      {/* Resultado do mês */}
+      <div className="mx-5 mb-4 px-3 py-2 bg-white/10 rounded-xl flex items-center justify-between text-sm">
+        <span className="text-white/70 text-xs">Resultado do mês</span>
+        <span
+          className={`font-bold text-sm ${
+            netPositive ? "text-white" : "text-red-200"
+          }`}
+        >
+          {hidden
+            ? "•••"
+            : `${netPositive ? "+" : "−"}${formatCurrency(Math.abs(netMonth))}`}
+        </span>
+      </div>
     </section>
   );
 };

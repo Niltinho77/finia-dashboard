@@ -18,29 +18,29 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   {
-    label: "Dashboard",
+    label: "Início",
     href: "/",
-    icon: <LayoutDashboard className="w-4 h-4" />,
+    icon: <LayoutDashboard className="w-5 h-5" />,
   },
   {
     label: "Transações",
     href: "/transacoes",
-    icon: <Receipt className="w-4 h-4" />,
+    icon: <Receipt className="w-5 h-5" />,
   },
   {
     label: "Tarefas",
     href: "/tarefas",
-    icon: <CheckSquare className="w-4 h-4" />,
+    icon: <CheckSquare className="w-5 h-5" />,
   },
   {
     label: "Relatórios",
     href: "/relatorios",
-    icon: <BarChart3 className="w-4 h-4" />,
+    icon: <BarChart3 className="w-5 h-5" />,
   },
   {
-    label: "Configurações",
+    label: "Config.",
     href: "/configuracoes",
-    icon: <Settings className="w-4 h-4" />,
+    icon: <Settings className="w-5 h-5" />,
   },
 ];
 
@@ -61,7 +61,7 @@ const Sidebar: React.FC = () => {
           border-r border-border-subtle
           shadow-lg
         "
-        style={{ width: "260px" }}
+        style={{ width: "240px" }}
       >
         {/* Topo: Logo + Navegação */}
         <div className="h-full flex flex-col">
@@ -81,7 +81,7 @@ const Sidebar: React.FC = () => {
             </div>
           </div>
 
-          <nav className="flex-1 px-3 py-4 space-y-1">
+          <nav className="flex-1 px-3 py-4 space-y-0.5">
             {navItems.map((item) => {
               const active = isActive(item.href);
 
@@ -90,61 +90,62 @@ const Sidebar: React.FC = () => {
                   key={item.href}
                   href={item.href}
                   className={`
-                    flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors
+                    flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all
                     ${
                       active
-                        ? "bg-brand-muted text-brand shadow-sm"
-                        : "text-text-muted hover:bg-background-subtle hover:text-text-base"
+                        ? "bg-brand-muted text-brand font-semibold"
+                        : "text-text-muted hover:bg-background-subtle hover:text-text-base font-medium"
                     }
                   `}
                 >
                   <span
                     className={`
-                      flex items-center justify-center rounded-lg p-1.5
+                      flex items-center justify-center rounded-xl p-1.5
                       ${
                         active
-                          ? "bg-brand text-white shadow-md"
-                          : "bg-background-elevated text-text-muted"
+                          ? "bg-brand text-white shadow-soft"
+                          : "bg-background-subtle text-text-muted"
                       }
                     `}
                   >
                     {item.icon}
                   </span>
-                  <span className="font-medium">{item.label}</span>
+                  <span>{item.label}</span>
+                  {active && (
+                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-brand" />
+                  )}
                 </Link>
               );
             })}
           </nav>
         </div>
 
-        {/* Rodapé: Info do plano */}
+        {/* Rodapé */}
         <div className="px-4 py-3 border-t border-border-subtle bg-background-elevated">
           <div className="flex items-center justify-between gap-2">
             <div className="flex flex-col">
               <span className="text-[11px] text-text-muted uppercase tracking-wide">
                 Plano atual
               </span>
-              <span className="text-xs font-semibold text-brand">
-                PREMIUM
-              </span>
+              <span className="text-xs font-semibold text-brand">PREMIUM</span>
             </div>
-            <span className="text-[11px] text-text-muted">v0.1.0</span>
+            <span className="text-[11px] text-text-muted">v1.2</span>
           </div>
         </div>
       </aside>
 
-      {/* MOBILE: Bottom Navigation fixa */}
+      {/* MOBILE: Bottom Navigation fixa — estilo app nativo */}
       <nav
         className="
           md:hidden
           fixed bottom-0 inset-x-0 z-30
           border-t border-border-subtle
           bg-background-elevated/98
-          backdrop-blur-sm
-          shadow-[0_-4px_12px_rgba(15,23,42,0.18)]
+          backdrop-blur-md
         "
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
-        <ul className="flex justify-between items-stretch">
+        <ul className="flex justify-around items-stretch px-1 pt-1 pb-2">
           {navItems.map((item) => {
             const active = isActive(item.href);
 
@@ -153,27 +154,24 @@ const Sidebar: React.FC = () => {
                 <Link
                   href={item.href}
                   className={`
-                    flex flex-col items-center justify-center py-2 text-[11px] transition-colors
-                    ${
-                      active
-                        ? "text-brand"
-                        : "text-text-muted hover:text-text-base"
-                    }
+                    flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-2xl mx-0.5 transition-all
+                    ${active ? "text-brand" : "text-text-muted"}
                   `}
                 >
+                  {/* Bolha de fundo ativa */}
                   <span
                     className={`
-                      flex items-center justify-center rounded-full p-1.5 mb-0.5
-                      ${
-                        active
-                          ? "bg-brand/15"
-                          : "bg-background-subtle"
-                      }
+                      flex items-center justify-center rounded-2xl transition-all duration-200
+                      ${active ? "bg-brand-muted px-4 py-1.5" : "px-2 py-1.5"}
                     `}
                   >
                     {item.icon}
                   </span>
-                  <span className="truncate max-w-[72px]">
+                  <span
+                    className={`text-[10px] font-medium transition-colors ${
+                      active ? "text-brand" : "text-text-muted"
+                    }`}
+                  >
                     {item.label}
                   </span>
                 </Link>

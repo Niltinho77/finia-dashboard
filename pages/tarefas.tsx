@@ -5,12 +5,12 @@ import {
   TaskStatus,
   fetchTasks,
   updateTask,
-  deleteTask,
   ApiError,
 } from "@/lib/api";
 import ListaTarefas from "@/components/Lists/ListaTarefas";
 import ModalNovaTarefa from "@/components/Modals/ModalNovaTarefa";
 import ModalEditarTarefa from "@/components/Modals/ModalEditarTarefa";
+import ModalExcluirTarefa from "@/components/Modals/ModalExcluirTarefa";
 
 type StatusFilter = "ALL" | TaskStatus;
 
@@ -23,6 +23,7 @@ export default function TarefasPage() {
 
   const [showNewModal, setShowNewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const loadTasks = async () => {
@@ -88,16 +89,9 @@ export default function TarefasPage() {
     setShowEditModal(true);
   };
 
-  const handleDelete = async (task: Task) => {
-    if (!confirm("Deseja realmente excluir esta tarefa?")) return;
-
-    try {
-      await deleteTask(task.id);
-      await loadTasks();
-    } catch (err) {
-      const apiError = err as ApiError;
-      setError(apiError.message ?? "Erro ao excluir tarefa.");
-    }
+  const handleDelete = (task: Task) => {
+    setSelectedTask(task);
+    setShowDeleteModal(true);
   };
 
   const handleAfterChange = async () => {
@@ -166,6 +160,13 @@ export default function TarefasPage() {
         task={selectedTask}
         onClose={() => setShowEditModal(false)}
         onUpdated={handleAfterChange}
+      />
+
+      <ModalExcluirTarefa
+        open={showDeleteModal}
+        task={selectedTask}
+        onClose={() => setShowDeleteModal(false)}
+        onDeleted={handleAfterChange}
       />
     </div>
   );

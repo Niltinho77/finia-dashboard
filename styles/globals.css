@@ -11,16 +11,23 @@ body {
 
 body {
   @apply bg-background-base text-text-base font-sans;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Scrollbar discreta */
-
+/* Scrollbar discreta (hidden no mobile) */
 * {
   box-sizing: border-box;
 }
 
+@media (pointer: coarse) {
+  ::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -28,16 +35,15 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.6);
+  background: rgba(148, 163, 184, 0.5);
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 139, 0.9);
+  background: rgba(100, 116, 139, 0.8);
 }
 
 /* Layout containers */
-
 .app-shell {
   min-height: 100vh;
   display: flex;
@@ -54,27 +60,43 @@ body {
 
 .app-content {
   flex: 1;
-  padding: 1.5rem;
+  padding: 1.25rem;
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
+  /* espaço para a bottom nav no mobile */
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 768px) {
+  .app-content {
+    padding: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
 }
 
 /* Tipografia */
-
-h1,
-h2,
-h3,
-h4 {
+h1, h2, h3, h4 {
   @apply font-semibold text-text-base;
 }
 
 /* Botões genéricos */
-
 .btn-primary {
-  @apply inline-flex items-center justify-center px-4 py-2 rounded-full bg-brand text-white text-sm font-medium shadow-soft hover:opacity-90 transition;
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-full bg-brand text-white text-sm font-medium shadow-soft hover:opacity-90 active:scale-95 transition-all;
 }
 
 .btn-ghost {
-  @apply inline-flex items-center justify-center px-3 py-2 rounded-full text-text-muted hover:bg-background-subtle text-sm transition;
+  @apply inline-flex items-center justify-center px-3 py-2 rounded-full text-text-muted hover:bg-background-subtle text-sm transition active:scale-95;
+}
+
+/* Transição suave entre páginas */
+.page-enter {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 200ms, transform 200ms;
 }
