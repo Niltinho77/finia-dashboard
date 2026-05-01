@@ -137,14 +137,25 @@ export interface LoginResponse {
 }
 
 /**
- * Login via telefone (fallback / login manual)
+ * Resposta do POST /auth/login — solicita envio de magic link via WhatsApp.
+ * Por segurança, é genérica: nunca revela se o telefone está cadastrado.
  */
-export async function loginWithPhone(
+export interface RequestLoginLinkResponse {
+  message: string;
+}
+
+/**
+ * Solicita um link de acesso ao painel via WhatsApp.
+ * Substitui o antigo loginWithPhone que retornava { user, token } direto
+ * (vulnerável: qualquer um que soubesse o telefone entrava na conta).
+ */
+export async function requestLoginLink(
   telefone: string
-): Promise<LoginResponse> {
-  return post<LoginResponse, { telefone: string }>("/auth/login", {
-    telefone,
-  });
+): Promise<RequestLoginLinkResponse> {
+  return post<RequestLoginLinkResponse, { telefone: string }>(
+    "/auth/login",
+    { telefone }
+  );
 }
 
 /**

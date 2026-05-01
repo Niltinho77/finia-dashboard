@@ -2,7 +2,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import {
-  loginWithPhone,
+  requestLoginLink,
   loginWithMagicToken,
   ApiError,
   User,
@@ -21,6 +21,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [magicTried, setMagicTried] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [linkSentMessage, setLinkSentMessage] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   // Se já estiver logado, manda para o dashboard
@@ -39,13 +40,9 @@ export default function LoginPage() {
    * Tenta login automático via link mágico (?token=...)
    */
   useEffect(() => {
-    // só roda no client quando o router estiver pronto
     if (!router.isReady) return;
-
-    // se já tentamos uma vez, não tenta de novo
     if (magicTried) return;
 
-    // token precisa ser string
     if (typeof token !== "string" || !token.trim()) {
       return;
     }
@@ -56,75 +53,64 @@ export default function LoginPage() {
         setError(null);
 
         const { user, token: jwt } = await loginWithMagicToken(tokenStr);
-
-        // salva sessão
         setAuthSession(user, jwt);
-
-        // redireciona para o dashboard
         router.replace("/");
       } catch (err) {
         const apiError = err as ApiError;
         setError(
           apiError.message ??
-            "Não foi possível entrar com o link mágico. Você pode tentar entrar informando seu telefone abaixo."
+            "Não foi possível entrar com o link. Solicite um novo abaixo."
         );
-        setMagicTried(true); // marca que já tentamos login mágico
+        setMagicTried(true);
       } finally {
         setLoading(false);
       }
     }
 
-    // tenta login mágico apenas uma vez
     setMagicTried(true);
     doMagicLogin(token);
   }, [router, token, magicTried]);
 
   /**
-   * Normaliza o telefone removendo todos os caracteres que não sejam dígitos
-   * e prefixando com "+" se necessário. Ex.:
-   *  "+55 51 99999-9999" -> "+5551999999999"
-   *  "55 51 999999999"   -> "+5551999999999"
+   * Normaliza o telefone: deixa só dígitos, prefixa com "+".
    */
   const normalizePhone = (input: string): string => {
-    const raw = input.trim();
-    const digits = raw.replace(/\D/g, ""); // remove tudo exceto dígitos
+    const digits = input.replace(/\D/g, "");
     if (!digits) return "";
-    // se o valor original já começar com "+", apenas adiciona o +
-    return raw.startsWith("+") ? `+${digits}` : `+${digits}`;
+    return `+${digits}`;
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    setLinkSentMessage(null);
 
     if (!phone.trim()) {
       setError("Informe seu número de telefone.");
       return;
     }
 
-    // Sanitiza/normaliza o telefone antes de enviar para o back-end
     const normalizedPhone = normalizePhone(phone);
 
-    if (!normalizedPhone) {
-      setError("Número de telefone inválido.");
+    // Mesma validação E.164 do backend (+ e 10–15 dígitos)
+    if (!/^\+\d{10,15}$/.test(normalizedPhone)) {
+      setError("Telefone inválido. Use o formato +5551999999999.");
       return;
     }
 
     try {
       setLoading(true);
-
-      const { user, token } = await loginWithPhone(normalizedPhone);
-
-      // salva sessão no front-end
-      setAuthSession(user, token);
-
-      // redireciona para o dashboard
-      router.push("/");
+      const { message } = await requestLoginLink(normalizedPhone);
+      setLinkSentMessage(
+        message ??
+          "Se o telefone estiver cadastrado, você receberá um link de acesso pelo WhatsApp em alguns segundos."
+      );
+      setPhone("");
     } catch (err) {
       const apiError = err as ApiError;
       setError(
         apiError.message ??
-          "Não foi possível entrar. Verifique o número informado."
+          "Não foi possível solicitar o link. Tente novamente em instantes."
       );
     } finally {
       setLoading(false);
@@ -153,28 +139,36 @@ export default function LoginPage() {
           Entrar no painel
         </h1>
 
-        {isMagicFlow ? (
+        {isMagicFlow && !error ? (
           <p className="text-xs text-text-muted mb-4">
             Validando seu link de acesso seguro...
           </p>
         ) : (
           <p className="text-xs text-text-muted mb-4">
-            Informe o telefone cadastrado no FinIA para visualizar seus dados
-            de transações, tarefas e relatórios.
+            Informe o telefone cadastrado no FinIA e enviaremos um link de
+            acesso seguro pelo WhatsApp. Sem senha, sem código.
           </p>
         )}
 
-        {/* Mensagem de erro (tanto do link mágico quanto do login por telefone) */}
         {error && (
           <div className="text-xs text-status-danger bg-status-danger/5 border border-status-danger/30 rounded-2xl px-3 py-2 mb-3">
             {error}
           </div>
         )}
 
-        {/* Formulário de telefone:
-            - sempre aparece quando NÃO estamos no fluxo de link mágico
-            - ou quando o link mágico falhou (magicTried true + erro)
-        */}
+        {linkSentMessage && (
+          <div className="text-xs text-brand bg-brand/5 border border-brand/30 rounded-2xl px-3 py-3 mb-3">
+            <p className="font-medium mb-1">📲 Link enviado!</p>
+            <p>{linkSentMessage}</p>
+            <p className="mt-2 text-text-muted">
+              Abra o WhatsApp, clique no link recebido e você cairá direto no
+              painel. Ele expira em 15 minutos.
+            </p>
+          </div>
+        )}
+
+        {/* Formulário sempre aparece quando não estamos no fluxo de link mágico,
+            ou quando o link mágico falhou. */}
         {(!isMagicFlow || (isMagicFlow && error)) && (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1">
@@ -192,10 +186,11 @@ export default function LoginPage() {
                 placeholder="Ex.: +55 51 99999-9999"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                disabled={loading}
               />
               <p className="text-[11px] text-text-muted mt-1">
-                Você pode usar espaços, parênteses ou traços: nós removeremos
-                automaticamente para validar.
+                Você pode usar espaços, parênteses ou traços — nós removemos
+                automaticamente.
               </p>
             </div>
 
@@ -204,12 +199,11 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full inline-flex items-center justify-center rounded-full bg-brand text-white text-sm font-medium py-2.5 mt-2 shadow-soft hover:opacity-90 transition disabled:opacity-60"
             >
-              {loading ? "Entrando..." : "Entrar no painel"}
+              {loading ? "Enviando link..." : "Receber link no WhatsApp"}
             </button>
           </form>
         )}
 
-        {/* Rodapé / ajuda */}
         <div className="mt-5 text-[11px] text-text-muted">
           {currentUser && (
             <p>
@@ -220,6 +214,10 @@ export default function LoginPage() {
               .
             </p>
           )}
+          <p className="mt-2">
+            Ainda não tem conta? Mande uma mensagem para a Lume no WhatsApp e
+            ela cuida do resto.
+          </p>
         </div>
       </div>
     </div>
